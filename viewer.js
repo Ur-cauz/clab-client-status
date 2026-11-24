@@ -16,10 +16,21 @@ function section(title, rows) {
 }
 async function refresh() {
   try {
-    const url = "https://raw.githubusercontent.com/Ur-cauz/lab-status-data/main/clients.json?t=" + Math.floor(Date.now()/60000);
-    const response = await fetch(url,{cache:"no-store",credentials:"omit",signal:AbortSignal.timeout(15000)});
-    if (!response.ok) throw Error();
-    const record = (await response.json())[parts[1]];
+    const options = {cache:"no-store", credentials:"omit", signal:AbortSignal.timeout(15000)};
+    const primary = "https://api.github.com/repos/Ur-cauz/lab-status-data/contents/clients.json";
+    let snapshot;
+    try {
+      const response = await fetch(primary, options);
+      if (!response.ok) throw Error();
+      const file = await response.json();
+      snapshot = JSON.parse(atob(file.content));
+    } catch {
+      // Shared networks can hit the unauthenticated API quota. Raw CDN data can lag.
+      const response = await fetch("https://raw.githubusercontent.com/Ur-cauz/lab-status-data/main/clients.json", options);
+      if (!response.ok) throw Error();
+      snapshot = await response.json();
+    }
+    const record = snapshot[parts[1]];
     if (!record) {content.replaceChildren();notice.textContent="This link is inactive or waiting for its first update.";return;}
     const encrypted = Uint8Array.from(atob(record), c => c.charCodeAt(0));
     const key = await crypto.subtle.importKey("raw",bytes(parts[2]),"AES-GCM",false,["decrypt"]);
@@ -35,5 +46,5 @@ async function refresh() {
       section("Recovery",[["Latest completed backup",when(d.backup)],["Last checksum-verified restore",when(d.restore)]]));
   } catch { content.replaceChildren(); notice.textContent="Status unavailable. Check the full link or try again shortly."; }
 }
-if(parts) { const tick=async()=>{await refresh();setTimeout(tick,60000);};tick(); }
+if(parts) { const tick=async()=>{await refresh();setTimeout(tick,90000);};tick(); }
 else notice.textContent="Open the full service link supplied by your hosting administrator.";
