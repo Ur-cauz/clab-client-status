@@ -30,7 +30,8 @@ async function refresh() {
     notice.textContent=(stale ? "Updates delayed · Last known state" : "Updated") + " · " + when(d.at*1000);
     const memory = n => n == null ? "Unavailable" : (n/1048576).toFixed(0)+" MiB";
     content.replaceChildren(section("Latest observation",[["Service state",d.state],["CPU",d.cpu == null ? "Unavailable" : d.cpu+"%"],["Memory",memory(d.ram)]]),
-      section("Last seven days",[["Observed running",hours(d.up)],["Observed downtime",hours(d.down)],["Planned stops",hours(d.planned)],["Observation coverage",hours(d.up+d.down+d.planned)+" / 168 h"],["Observed restarts",d.restarts],["Peak memory",memory(d.peak)]]),
+      section("Last seven days",[["Observed running",hours(d.up)],["Observed downtime",hours(d.down)],["Planned stops",hours(d.planned)],["Observation coverage",hours(d.up+d.down+d.planned)+" / 168 h"],["Docker automatic restarts observed",d.restarts],["Peak memory",memory(d.peak)]]),
+      section("Daily history · India time",(d.days || []).map(day => [day.day, hours(day.up)+" running · "+hours(day.down)+" down · "+hours(day.planned)+" planned"])),
       section("Recovery",[["Latest completed backup",when(d.backup)],["Last checksum-verified restore",when(d.restore)]]));
   } catch { content.replaceChildren(); notice.textContent="Status unavailable. Check the full link or try again shortly."; }
 }
